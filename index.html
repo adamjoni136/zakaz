@@ -199,5 +199,28 @@ div.innerHTML = `${item.title} — ${item.qty} шт. x ${item.price}₽ = ${item
     });
 }
   </script>
+  <script>
+        let cart = [];
+        let total = 0;
+
+        function addToCart(name, price) {
+            cart.push({ name, price });
+            updateCart();
+        }
+
+        function updateCart() {
+            const cartElement = document.getElementById("cart");
+            const totalElement = document.getElementById("total");
+            cartElement.innerHTML = "";
+            total = 0;
+
+            cart.forEach((item) => {
+                cartElement.innerHTML += `<p>${item.name} - ${item.price} сом</p>`;
+                total += item.price;
+            });
+
+            totalElement.textContent = `Итого: ${total} сом`;
+        }
+  </script>
 </body>
 </html>
