@@ -114,28 +114,28 @@
         <td>шотка</td>
         <td>40с</td>
         <td><input type="number" min="1" value="1" /></td>
-        <td><button type="button" onclick="addToCart('шотка', 40, this)">добавить в корзину</button></td>
+        <td><button type="button" onclick="addToCart('шотка', 40, 'шотка120.jpg', this)">добавить в корзину</button></td>
       </tr>
       <tr>
         <td><img src="шотка106.jpg" alt="Виктор-4" /></td>
         <td>шотка</td>
         <td>40с</td>
         <td><input type="number" min="1" value="1" /></td>
-        <td><button type="button" onclick="addToCart('шотка', 40, this)">добавить в корзину</button></td>
+        <td><button type="button" onclick="addToCart('шотка', 40, 'шотка106.jpg', this)">добавить в корзину</button></td>
       </tr>
       <tr>
         <td><img src="шотка120.jpg" alt="Виктор-4" /></td>
         <td>шотка</td>
         <td>40с</td>
         <td><input type="number" min="1" value="1" /></td>
-        <td><button type="button" onclick="addToCart('шотка', 40, this)">добавить в корзину</button></td>
+        <td><button type="button" onclick="addToCart('шотка', 40, 'шотка120.jpg', this)">добавить в корзину</button></td>
       </tr>
       <tr>
         <td><img src="шотка120.jpg" alt="Виктор-4" /></td>
         <td>шотка106</td>
         <td>40с</td>
         <td><input type="number" min="1" value="1" /></td>
-        <td><button type="button" onclick="addToCart('шотка', 40, this)">добавить в корзину</button></td>
+        <td><button type="button" onclick="addToCart('шотка106', 40, 'шотка120.jpg', this)">добавить в корзину</button></td>
       </tr>
     </tbody>
   </table>
@@ -154,12 +154,16 @@
 <script>
   const cartItems = [];
 
-  function addToCart(title, price, button) {
+  function addToCart(title, price, image, button) {
     const row = button.closest('tr');
     const qty = parseInt(row.querySelector('input[type="number"]').value);
-    const image = row.querySelector('img').alt; // Используем alt изображения для уникальности
 
-    const existingItem = cartItems.find(item => item.title === title && item.price === price && item.image === image);
+    // Создаем уникальный ключ для товара
+    const uniqueKey = title + image;
+
+    // Проверяем, есть ли уже такой товар в корзине
+    const existingItem = cartItems.find(item => item.uniqueKey === uniqueKey);
+
     if (existingItem) {
       existingItem.qty += qty;
       existingItem.total = existingItem.qty * price;
@@ -169,7 +173,8 @@
         title,
         price,
         qty,
-        image,  // Добавляем уникальное поле
+        image,
+        uniqueKey,  // Уникальный ключ для каждого товара
         total: price * qty
       });
     }
