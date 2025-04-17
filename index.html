@@ -157,8 +157,9 @@
   function addToCart(title, price, button) {
     const row = button.closest('tr');
     const qty = parseInt(row.querySelector('input[type="number"]').value);
+    const image = row.querySelector('img').alt; // Используем alt изображения для уникальности
 
-    const existingItem = cartItems.find(item => item.title === title && item.price === price);
+    const existingItem = cartItems.find(item => item.title === title && item.price === price && item.image === image);
     if (existingItem) {
       existingItem.qty += qty;
       existingItem.total = existingItem.qty * price;
@@ -168,6 +169,7 @@
         title,
         price,
         qty,
+        image,  // Добавляем уникальное поле
         total: price * qty
       });
     }
