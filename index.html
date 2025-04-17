@@ -70,19 +70,16 @@
     .cart-item {
       margin-bottom: 8px;
       font-size: 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border: 1px solid #ccc;
-      padding: 6px 10px;
-      background: #f9f9f9;
     }
 
-    .remove-btn {
-      color: red;
-      cursor: pointer;
-      font-weight: bold;
+    .cart-item button {
       margin-left: 10px;
+      color: white;
+      background: red;
+      border: none;
+      border-radius: 4px;
+      padding: 2px 6px;
+      cursor: pointer;
     }
 
     @media (max-width: 600px) {
@@ -113,9 +110,9 @@
     </thead>
     <tbody>
       <tr>
-        <td><img src="шотка120.jpg" alt="шотка" /></td>
+        <td><img src="шотка120.jpg" alt="Виктор-4" /></td>
         <td>шотка</td>
-        <td>40₽</td>
+        <td>40</td>
         <td><input type="number" min="1" value="1" /></td>
         <td><button type="button" onclick="addToCart('шотка', 40, this)">+</button></td>
       </tr>
@@ -134,32 +131,27 @@
 </form>
 
 <script>
-  const telegramBotToken = '7960727448:AAF0B2mizrzj7sjHP68n-1IcjLoNc6kwVkE';
-  const chatId = '5567924440';
   const cartItems = [];
 
   function addToCart(title, price, button) {
     const row = button.closest('tr');
     const qty = parseInt(row.querySelector('input[type="number"]').value);
 
-    const item = {
-      id: Date.now(),
-      title,
-      price,
-      qty,
-      total: price * qty
-    };
-
-    cartItems.push(item);
-    updateCartDisplay();
-  }
-
-  function removeFromCart(id) {
-    const index = cartItems.findIndex(item => item.id === id);
-    if (index !== -1) {
-      cartItems.splice(index, 1);
-      updateCartDisplay();
+    const existingItem = cartItems.find(item => item.title === title && item.price === price);
+    if (existingItem) {
+      existingItem.qty += qty;
+      existingItem.total = existingItem.qty * price;
+    } else {
+      cartItems.push({
+        id: Date.now(),
+        title,
+        price,
+        qty,
+        total: price * qty
+      });
     }
+
+    updateCartDisplay();
   }
 
   function updateCartDisplay() {
@@ -169,15 +161,28 @@
     cartText.value = '';
 
     cartItems.forEach(item => {
+      const itemText = `${item.title} — ${item.qty} шт. x ${item.price}₽ = ${item.total}₽`;
+
       const div = document.createElement('div');
       div.className = 'cart-item';
-      div.innerHTML = `
-        <span>${item.title} — ${item.qty} шт. x ${item.price}₽ = ${item.total}₽</span>
-        <span class="remove-btn" onclick="removeFromCart(${item.id})">×</span>
-      `;
+      div.textContent = itemText;
+
+      const removeBtn = document.createElement('button');
+      removeBtn.textContent = '×';
+      removeBtn.onclick = () => removeFromCart(item.id);
+      div.appendChild(removeBtn);
+
       cartList.appendChild(div);
-      cartText.value += `${item.title} — ${item.qty} шт. x ${item.price}₽ = ${item.total}₽\n`;
+      cartText.value += itemText + '\n';
     });
+  }
+
+  function removeFromCart(id) {
+    const index = cartItems.findIndex(item => item.id === id);
+    if (index !== -1) {
+      cartItems.splice(index, 1);
+      updateCartDisplay();
+    }
   }
 
   document.getElementById('orderForm').addEventListener('submit', function(e) {
@@ -189,10 +194,10 @@
 
     const message = `Новый заказ:\nИмя: ${name}\nТелефон: ${phone}\nАдрес: ${address}\nТовары:\n${text}`;
 
-    fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+    fetch(`https://api.telegram.org/bot7960727448:AAF0B2mizrzj7sjHP68n-1IcjLoNc6kwVkE/sendMessage`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ chat_id: chatId, text: message })
+      body: JSON.stringify({ chat_id: '5567924440', text: message })
     }).then(response => {
       if (response.ok) {
         alert('Заказ отправлен!');
@@ -200,7 +205,7 @@
         updateCartDisplay();
         document.getElementById('orderForm').reset();
       } else {
-        alert('Ошибка при отправке заказа.');
+        alert('Ошибка при отправке.');
       }
     });
   });
