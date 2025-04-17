@@ -2,268 +2,241 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Каталог товаров</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Мелочь - Интернет-магазин</title>
   <style>
-    body { font-family: Arial; margin:0; padding:20px; background:#f9f9f9; }
-    h1,h2,h3 { text-align:center; margin-bottom:20px; }
-    .controls { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-bottom:20px; }
-    .controls input, .controls select {
-      padding:10px; font-size:16px; width:200px; max-width:100%;
-    }
-    .catalog { display:grid; gap:20px; margin-bottom:30px; }
-    .product-card {
-      background:#fff; border-radius:10px; padding:15px;
-      box-shadow:0 2px 8px rgba(0,0,0,0.1);
-      display:flex; flex-direction:column; align-items:center;
-      opacity:0; transform:translateY(20px);
-      transition:all .4s ease;
-    }
-    .product-card.visible { opacity:1; transform:translateY(0); }
-    .product-image { width:100px; height:100px; object-fit:contain; margin-bottom:10px; }
-    .product-name { font-weight:bold; margin-bottom:5px; text-align:center; }
-    .product-price { color:#28a745; margin-bottom:10px; font-size:18px; }
-    .product-quantity { width:60px; padding:5px; margin-bottom:10px; text-align:center; }
-    .add-button {
-      background:#007bff; color:#fff; border:none; padding:8px 16px;
-      border-radius:5px; cursor:pointer; transition:background .3s,transform .3s;
-    }
-    .add-button:hover { background:#0056b3; transform:scale(1.05); }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Arial', sans-serif; background: #f4f4f4; padding: 20px; color: #333; }
+    h1, h2 { text-align: center; margin-bottom: 20px; animation: fadeIn 1s ease forwards; }
 
-    .cart {
-      background:#fff; border-radius:10px; padding:15px;
-      box-shadow:0 2px 8px rgba(0,0,0,0.1);
-      max-width:500px; margin:0 auto 30px;
+    input, select, button, textarea {
+      font-size: 1rem;
+      padding: 10px;
+      margin: 10px auto;
+      width: 100%;
+      max-width: 400px;
+      display: block;
+      border-radius: 5px;
+      border: 1px solid #ccc;
     }
-    .cart-item {
-      display:flex; justify-content:space-between; align-items:center;
-      margin-bottom:10px;
-    }
-    .cart-total {
-      text-align:right; font-size:20px; font-weight:bold; margin-top:10px;
-    }
-    .remove-button, .clear-button, .order-button {
-      background:#dc3545; color:#fff; border:none; padding:8px 16px;
-      border-radius:5px; cursor:pointer; transition:background .3s;
-    }
-    .remove-button:hover, .clear-button:hover, .order-button:hover { background:#c82333; }
 
-    .order-form-container, .history-container {
-      background:#fff; border-radius:10px; padding:15px;
-      box-shadow:0 2px 8px rgba(0,0,0,0.1);
-      max-width:500px; margin:0 auto 30px;
+    button {
+      background: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
     }
-    .order-form {
-      display:flex; flex-direction:column; gap:10px;
+    button:hover { background: #218838; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      background: white;
+      box-shadow: 0 0 10px #ccc;
     }
-    .order-form input {
-      padding:10px; font-size:16px; width:100%; box-sizing:border-box;
-      border:1px solid #ccc; border-radius:5px;
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: center;
     }
-    .history-item {
-      border-bottom:1px solid #eee; padding:10px 0;
+    th { background: #f8f8f8; }
+
+    .product-img { max-width: 60px; height: auto; transition: transform 0.3s ease; }
+    .product-img:hover { transform: scale(1.1); }
+
+    .cart-summary { text-align: center; font-weight: bold; margin: 10px 0; }
+    .order-form, #orderHistory { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px #ccc; margin-top: 20px; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-    .history-item:last-child { border-bottom:none; }
-    .history-item h4 { margin:0 0 5px; font-size:16px; }
-    .history-item p { margin:2px 0; font-size:14px; }
-    
-    @media(min-width:600px){
-      .catalog { grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); }
+
+    @media (max-width: 600px) {
+      th, td { font-size: 12px; padding: 6px; }
+      input, select, button, textarea { font-size: 0.9rem; padding: 8px; }
+      .cart-summary { font-size: 1.2rem; }
+      #cartList div { font-size: 0.9rem; }
+      .order-form input, .order-form button { width: 90%; }
     }
   </style>
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
-  <h1>Каталог товаров</h1>
+  <h1>Мелочь - Каталог товаров</h1>
 
-  <!-- Поиск + Фильтр -->
-  <div class="controls">
-    <input type="text" id="searchInput" placeholder="Поиск по товарам...">
-    <select id="priceFilter">
-      <option value="default">Сортировать по цене</option>
-      <option value="low-to-high">Дешевые → Дорогие</option>
-      <option value="high-to-low">Дорогие → Дешевые</option>
-    </select>
+  <input type="text" id="search" placeholder="Поиск товара..." />
+  <select id="sort">
+    <option value="">Сортировка по цене</option>
+    <option value="asc">Сначала дешёвые</option>
+    <option value="desc">Сначала дорогие</option>
+  </select>
+
+  <table>
+    <thead>
+      <tr><th>Фото</th><th>Название</th><th>Цена</th><th>Кол-во</th><th>Добавить</th></tr>
+    </thead>
+    <tbody id="productTable"></tbody>
+  </table>
+
+  <div class="order-form">
+    <h2>Оформить заказ</h2>
+    <div id="cartList"></div>
+    <div class="cart-summary">Итого: <span id="totalSum">0</span> с</div>
+    <button id="clearCart">Очистить корзину</button>
+    <input type="text" id="name" placeholder="Ваше имя" required />
+    <input type="tel" id="phone" placeholder="Телефон" required />
+    <input type="text" id="address" placeholder="Адрес доставки" required />
+    <button id="submitOrder">Отправить заказ</button>
   </div>
 
-  <!-- Каталог -->
-  <div id="catalog" class="catalog"></div>
-
-  <!-- Корзина -->
-  <div class="cart">
-    <h2>Корзина</h2>
-    <div id="cartItems"></div>
-    <div class="cart-total">Итого: <span id="cartTotal">0</span> сом.</div>
-    <button class="clear-button" id="clearCartBtn">Очистить корзину</button>
-  </div>
-
-  <!-- Форма заказа (отдельно от корзины) -->
-  <div class="order-form-container">
-    <h3>Оформление заказа</h3>
-    <form id="orderForm" class="order-form" onsubmit="return false;">
-      <input type="text" id="clientName" placeholder="Ваше имя" required>
-      <input type="tel" id="clientPhone" placeholder="Телефон" required>
-      <input type="text" id="clientAddress" placeholder="Адрес доставки" required>
-      <button class="order-button" id="orderBtn">Оформить заказ</button>
-    </form>
-  </div>
-
-  <!-- История заказов -->
-  <div class="history-container">
-    <h3>История заказов</h3>
-    <div id="historyItems"></div>
+  <button id="toggleHistory">История заказов</button>
+  <div id="orderHistory" style="display:none">
+    <h2>История заказов</h2>
+    <ul id="historyList"></ul>
   </div>
 
   <script>
     const products = [
-      { name:'Щетка (3361)', price:40, image:'шотка120.jpg' },
-      { name:'Щетка (106)',  price:40, image:'https://via.placeholder.com/100' },
-      { name:'Щетка (3369)', price:50, image:'https://via.placeholder.com/100' },
-      { name:'Щетка (80)',   price:55, image:'https://via.placeholder.com/100' },
+      { title: 'шотка(3361)', price: 40, image: 'шотка120.jpg' },
+      { title: 'шотка(106)', price: 40, image: 'шотка106.jpg' },
+      { title: 'шотка(3369)', price: 50, image: 'шотка авалный.jpg' },
+      { title: 'шотка(80)', price: 55, image: 'шотка80.jpg' }
     ];
-    let cart = [];
 
-    const catalogEl     = document.getElementById('catalog');
-    const searchInput   = document.getElementById('searchInput');
-    const priceFilter   = document.getElementById('priceFilter');
-    const cartItemsEl   = document.getElementById('cartItems');
-    const cartTotalEl   = document.getElementById('cartTotal');
-    const clearCartBtn  = document.getElementById('clearCartBtn');
-    const orderBtn      = document.getElementById('orderBtn');
-    const nameInput     = document.getElementById('clientName');
-    const phoneInput    = document.getElementById('clientPhone');
-    const addrInput     = document.getElementById('clientAddress');
-    const historyEl     = document.getElementById('historyItems');
+    const cart = [];
 
-    function renderCatalog(list) {
-      catalogEl.innerHTML = '';
-      list.forEach((p,i)=>{
-        const card = document.createElement('div');
-        card.className = 'product-card';
-        card.innerHTML = `
-          <img class="product-image" src="${p.image}" alt="${p.name}">
-          <div class="product-name">${p.name}</div>
-          <div class="product-price">${p.price} руб.</div>
-          <input type="number" class="product-quantity" value="1" min="1">
-          <button class="add-button">Добавить</button>
-        `;
-        card.querySelector('.add-button').onclick = ()=>{
-          const qty = parseInt(card.querySelector('.product-quantity').value);
-          if(qty>0) addToCart(p, qty);
-        };
-        catalogEl.appendChild(card);
-        setTimeout(()=>card.classList.add('visible'),50*i);
-      });
-    }
+    const productTable = document.getElementById('productTable');
+    const search = document.getElementById('search');
+    const sort = document.getElementById('sort');
+    const cartList = document.getElementById('cartList');
+    const totalSum = document.getElementById('totalSum');
 
-    function addToCart(product, qty) {
-      const item = cart.find(i=>i.name===product.name);
-      if (item) item.quantity += qty;
-      else cart.push({...product,quantity:qty});
-      renderCart();
-    }
-
-    function renderCart() {
-      cartItemsEl.innerHTML = '';
-      let total = 0;
-      cart.forEach((item,idx)=>{
-        const row = document.createElement('div');
-        row.className = 'cart-item';
-        row.innerHTML = `
-          <div>${item.name} (x${item.quantity})</div>
-          <div>
-            ${item.price*item.quantity} руб.
-            <button class="remove-button">Удалить</button>
-          </div>
-        `;
-        row.querySelector('.remove-button').onclick = ()=>{
-          cart.splice(idx,1);
-          renderCart();
-        };
-        cartItemsEl.appendChild(row);
-        total += item.price * item.quantity;
-      });
-      cartTotalEl.textContent = total;
-    }
-
-    clearCartBtn.onclick = ()=>{
-      cart = [];
-      renderCart();
-    };
-
-    function sendToTelegramImageHack(text){
-      const token  = '7960727448:AAF0B2mizrzj7sjHP68n-1IcjLoNc6kwVkE';
-      const chatId = '5567924440';
-      const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(text)}`;
-      new Image().src = url;
-    }
-
-    function saveOrderToHistory(order) {
-      const history = JSON.parse(localStorage.getItem('orderHistory')||'[]');
-      history.unshift(order);
-      localStorage.setItem('orderHistory', JSON.stringify(history));
-      renderHistory();
-    }
-
-    function renderHistory() {
-      const history = JSON.parse(localStorage.getItem('orderHistory')||'[]');
-      historyEl.innerHTML = '';
-      history.forEach(entry => {
-        const div = document.createElement('div');
-        div.className = 'history-item';
-        div.innerHTML = `
-          <h4>${new Date(entry.date).toLocaleString()}</h4>
-          <p><strong>Имя:</strong> ${entry.name}</p>
-          <p><strong>Телефон:</strong> ${entry.phone}</p>
-          <p><strong>Адрес:</strong> ${entry.address}</p>
-          <p><strong>Товары:</strong><br>${entry.items}</p>
-          <p><strong>Итого:</strong> ${entry.total} руб.</p>
-        `;
-        historyEl.appendChild(div);
-      });
-    }
-
-    orderBtn.onclick = ()=>{
-      if (!cart.length) return alert('Корзина пуста!');
-      if (!nameInput.value.trim()||!phoneInput.value.trim()||!addrInput.value.trim()) {
-        return alert('Пожалуйста, заполните имя, телефон и адрес.');
-      }
-      const itemsDesc = cart.map(i=>`${i.name} x${i.quantity} = ${i.price*i.quantity} руб.`).join('\n');
-      const total = cart.reduce((s,i)=>s+i.price*i.quantity,0);
-      const msg = `Новый заказ:\nИмя: ${nameInput.value}\nТелефон: ${phoneInput.value}\nАдрес: ${addrInput.value}\n\nТовары:\n${itemsDesc}\nИтого: ${total} руб.`;
-
-      sendToTelegramImageHack(msg);
-
-      // Сохранить в историю
-      saveOrderToHistory({
-        date: Date.now(),
-        name: nameInput.value,
-        phone: phoneInput.value,
-        address: addrInput.value,
-        items: itemsDesc.replace(/\n/g,'<br>'),
-        total
-      });
-
-      alert('Ваш заказ отправлен!');
-      cart = []; renderCart();
-      nameInput.value=''; phoneInput.value=''; addrInput.value='';
-    };
-
-    function applyFilters(){
+    function renderProducts() {
       let filtered = [...products];
-      const q = searchInput.value.trim().toLowerCase();
-      if(q) filtered = filtered.filter(p=>p.name.toLowerCase().includes(q));
-      if(priceFilter.value==='low-to-high') filtered.sort((a,b)=>a.price-b.price);
-      if(priceFilter.value==='high-to-low') filtered.sort((a,b)=>b.price-a.price);
-      renderCatalog(filtered);
+      if (search.value) {
+        filtered = filtered.filter(p => p.title.toLowerCase().includes(search.value.toLowerCase()));
+      }
+      if (sort.value) {
+        filtered.sort((a, b) => sort.value === 'asc' ? a.price - b.price : b.price - a.price);
+      }
+      productTable.innerHTML = '';
+      filtered.forEach(p => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><img src="${p.image}" class="product-img" alt="${p.title}"/></td>
+          <td>${p.title}</td>
+          <td>${p.price}</td>
+          <td><input type="number" min="1" value="1" /></td>
+          <td><button onclick="addToCart('${p.title}', ${p.price}, '${p.image}', this)">добавить</button></td>
+        `;
+        productTable.appendChild(row);
+      });
     }
-    searchInput.oninput  = applyFilters;
-    priceFilter.onchange = applyFilters;
 
-    // Инициализация
-    renderCatalog(products);
-    renderCart();
-    renderHistory();
+    function addToCart(title, price, image, btn) {
+      const qty = +btn.parentElement.parentElement.querySelector('input').value;
+      const index = cart.findIndex(item => item.title === title);
+      if (index !== -1) cart[index].qty += qty;
+      else cart.push({ title, price, qty });
+      updateCart();
+    }
+
+    function updateCart() {
+      cartList.innerHTML = '';
+      let total = 0;
+      cart.forEach((item, i) => {
+        total += item.qty * item.price;
+        const div = document.createElement('div');
+        div.innerHTML = `${item.title} — ${item.qty} × ${item.price}c = ${item.qty * item.price}c <button onclick="removeFromCart(${i})">&times;</button>`;
+        cartList.appendChild(div);
+      });
+      totalSum.textContent = total;
+    }
+
+    function removeFromCart(i) {
+      cart.splice(i, 1);
+      updateCart();
+    }
+
+    document.getElementById('clearCart').onclick = () => {
+      cart.length = 0;
+      updateCart();
+    };
+
+    document.getElementById('submitOrder').onclick = () => {
+      const name = document.getElementById('name').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const address = document.getElementById('address').value.trim();
+      if (!name || !phone || !address || cart.length === 0) {
+        Swal.fire('Ошибка', 'Заполните все поля и добавьте товары', 'warning');
+        return;
+      }
+      const items = cart.map(i => `${i.title} — ${i.qty}×${i.price}c`).join('\n');
+const total = cart.reduce((sum, item) => sum + item.qty * item.price, 0);
+
+const msg = `Новый заказ:
+Имя: ${name}
+Телефон: ${phone}
+Адрес: ${address}
+Товары:
+${items}
+
+Итого: ${total}c`;
+
+
+      fetch('https://api.telegram.org/bot7960727448:AAF0B2mizrzj7sjHP68n-1IcjLoNc6kwVkE/sendMessage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: '5567924440', text: msg })
+      }).then(r => {
+        if (r.ok) {
+          const history = JSON.parse(localStorage.getItem('orderHistory') || '[]');
+          history.push({ name, phone, address, items: cart, time: new Date().toLocaleString() });
+          localStorage.setItem('orderHistory', JSON.stringify(history));
+          Swal.fire('Успех!', 'Ваш заказ отправлен!', 'success');
+
+          cart.length = 0; updateCart();
+          document.getElementById('name').value = '';
+          document.getElementById('phone').value = '';
+          document.getElementById('address').value = '';
+        } else {
+          Swal.fire('Ошибка', 'Не удалось отправить заказ. Попробуйте позже.', 'error');
+        }
+      });
+    };
+
+    document.getElementById('toggleHistory').onclick = () => {
+      const hist = document.getElementById('orderHistory');
+      hist.style.display = hist.style.display === 'none' ? 'block' : 'none';
+
+      // Проверка истории
+      const history = JSON.parse(localStorage.getItem('orderHistory') || '[]');
+      console.log('История заказов:', history); // Для отладки
+
+      const list = document.getElementById('historyList');
+      list.innerHTML = '';
+
+      if (history.length === 0) {
+        list.innerHTML = '<li>История заказов пуста.</li>';
+        return;
+      }
+
+      history.forEach(o => {
+        const li = document.createElement('li');
+        li.innerHTML = `<strong>${o.time}</strong><br>${o.name}, ${o.phone}, ${o.address}<br>${o.items.map(i => `${i.title} × ${i.qty}`).join(', ')}`;
+        list.appendChild(li);
+      });
+    };
+
+    search.oninput = renderProducts;
+    sort.onchange = renderProducts;
+    renderProducts();
   </script>
 </body>
 </html>
+
 
