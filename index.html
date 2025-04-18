@@ -49,26 +49,25 @@
     .cart-summary { text-align: center; font-weight: bold; margin: 10px 0; }
     .order-form, #orderHistory { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px #ccc; margin-top: 20px; }
 
-    .delete-order {
+    /* Стили корзины */
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .cart-item button {
       background: #dc3545;
       color: white;
       border: none;
-      padding: 8px 12px;
-      margin-top: 10px;
+      padding: 5px 10px;
       border-radius: 5px;
       cursor: pointer;
       transition: background 0.3s ease;
     }
-    .delete-order:hover {
-      background: #c82333;
-    }
+    .cart-item button:hover { background: #c82333; }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Новая анимация для добавления в корзину */
+    /* Анимация кнопки Добавить */
     @keyframes addToCart {
       0% { transform: scale(1); background-color: #28a745; }
       50% { transform: scale(1.2); background-color: #218838; }
@@ -76,6 +75,26 @@
     }
     .animate-add {
       animation: addToCart 0.5s ease;
+    }
+
+    /* Анимация уведомления Добавлено */
+    @keyframes bubble {
+      0% { opacity: 0; transform: translateY(0) scale(0.5); }
+      50% { opacity: 1; transform: translateY(-20px) scale(1); }
+      100% { opacity: 0; transform: translateY(-40px) scale(1.5); }
+    }
+    .add-notif {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #28a745;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 0.9rem;
+      pointer-events: none;
+      animation: bubble 0.6s ease-out;
     }
 
     @media (max-width: 600px) {
@@ -142,7 +161,6 @@
     ];
 
     const cart = JSON.parse(localStorage.getItem('cart')) || [];
-
     const productTable = document.getElementById('productTable');
     const search = document.getElementById('search');
     const sort = document.getElementById('sort');
@@ -151,12 +169,8 @@
 
     function renderProducts() {
       let filtered = [...products];
-      if (search.value) {
-        filtered = filtered.filter(p => p.title.toLowerCase().includes(search.value.toLowerCase()));
-      }
-      if (sort.value) {
-        filtered.sort((a, b) => sort.value === 'asc' ? a.price - b.price : b.price - a.price);
-      }
+      if (search.value) filtered = filtered.filter(p => p.title.toLowerCase().includes(search.value.toLowerCase()));
+      if (sort.value) filtered.sort((a, b) => sort.value === 'asc' ? a.price - b.price : b.price - a.price);
       productTable.innerHTML = '';
       filtered.forEach(p => {
         const row = document.createElement('tr');
@@ -165,7 +179,7 @@
           <td>${p.title}</td>
           <td>${p.price}</td>
           <td><input type="number" min="1" value="1" /></td>
-          <td><button onclick="addToCart('${p.title}', ${p.price}, '${p.image}', this)">добавить</button></td>
+          <td style="position: relative;"><button onclick="addToCart('${p.title}', ${p.price}, '${p.image}', this)">добавить</button></td>
         `;
         productTable.appendChild(row);
       });
@@ -182,7 +196,14 @@
       btn.classList.add('animate-add');
       setTimeout(() => btn.classList.remove('animate-add'), 500);
 
-      // Сохраняем корзину в localStorage
+      // Уведомление о добавлении
+      const parent = btn.parentElement;
+      const notif = document.createElement('div');
+      notif.className = 'add-notif';
+      notif.textContent = 'Добавлено';
+      parent.appendChild(notif);
+      setTimeout(() => notif.remove(), 600);
+
       localStorage.setItem('cart', JSON.stringify(cart));
     }
 
@@ -192,12 +213,14 @@
       cart.forEach((item, i) => {
         total += item.qty * item.price;
         const div = document.createElement('div');
-        div.innerHTML = `${item.title} — ${item.qty} × ${item.price}c = ${item.qty * item.price}c <button onclick="removeFromCart(${i})">&times;</button>`;
+        div.classList.add('cart-item');
+        div.innerHTML = `
+          <span>${item.title} — ${item.qty} × ${item.price}c = ${item.qty * item.price}c</span>
+          <button onclick="removeFromCart(${i})">&times;</button>
+        `;
         cartList.appendChild(div);
       });
       totalSum.textContent = total;
-
-      // Сохраняем корзину
       localStorage.setItem('cart', JSON.stringify(cart));
     }
 
@@ -206,10 +229,7 @@
       updateCart();
     }
 
-    document.getElementById('clearCart').onclick = () => {
-      cart.length = 0;
-      updateCart();
-    };
+    document.getElementById('clearCart').onclick = () => { cart.length = 0; updateCart(); };
 
     document.getElementById('submitOrder').onclick = () => {
       const name = document.getElementById('name').value.trim();
@@ -221,32 +241,16 @@
       }
       const items = cart.map(i => `${i.title} — ${i.qty}×${i.price}c`).join('\n');
       const total = cart.reduce((sum, item) => sum + item.qty * item.price, 0);
-
-      const msg = `Новый заказ:
-Имя: ${name}
-Телефон: ${phone}
-Адрес: ${address}
-Товары:
-${items}
-
-Итого: ${total}c`;
-
+      const msg = `Новый заказ:\nИмя: ${name}\nТелефон: ${phone}\nАдрес: ${address}\nТовары:\n${items}\n\nИтого: ${total}c`;
       fetch('https://api.telegram.org/bot<ТВОЙ_ТОКЕН>/sendMessage', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: '<ТВОЙ_CHAT_ID>', text: msg })
       }).then(r => {
         if (r.ok) {
           Swal.fire('Успех!', 'Ваш заказ отправлен!', 'success');
-          cart.length = 0;
-          updateCart();
-          localStorage.removeItem('cart');
-          document.getElementById('name').value = '';
-          document.getElementById('phone').value = '';
-          document.getElementById('address').value = '';
-        } else {
-          Swal.fire('Ошибка', 'Не удалось отправить заказ. Попробуйте позже.', 'error');
-        }
+          cart.length = 0; updateCart(); localStorage.removeItem('cart');
+          document.getElementById('name').value = ''; document.getElementById('phone').value = ''; document.getElementById('address').value = '';
+        } else Swal.fire('Ошибка', 'Не удалось отправить заказ. Попробуйте позже.', 'error');
       });
     };
 
@@ -254,23 +258,15 @@ ${items}
       let history = JSON.parse(localStorage.getItem('orderHistory') || '[]');
       history.splice(index, 1);
       localStorage.setItem('orderHistory', JSON.stringify(history));
-      document.getElementById('toggleHistory').click();
-      document.getElementById('toggleHistory').click();
+      document.getElementById('toggleHistory').click(); document.getElementById('toggleHistory').click();
     }
 
     document.getElementById('toggleHistory').onclick = () => {
       const hist = document.getElementById('orderHistory');
       hist.style.display = hist.style.display === 'none' ? 'block' : 'none';
-
       const history = JSON.parse(localStorage.getItem('orderHistory') || '[]');
-      const list = document.getElementById('historyList');
-      list.innerHTML = '';
-
-      if (history.length === 0) {
-        list.innerHTML = '<li>История заказов пуста.</li>';
-        return;
-      }
-
+      const list = document.getElementById('historyList'); list.innerHTML = '';
+      if (history.length === 0) { list.innerHTML = '<li>История заказов пуста.</li>'; return; }
       history.forEach((o, index) => {
         const li = document.createElement('li');
         const itemsText = o.items.map(i => `${i.title} × ${i.qty}`).join(', ');
