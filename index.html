@@ -208,7 +208,7 @@
         total += item.qty * item.price;
         const div = document.createElement('div');
         div.classList.add('cart-item');
-        div.innerHTML = `
+        div.innerHTML = ` 
           <span>${item.title} — ${item.qty} шт. — ${item.qty * item.price} с</span>
           <button onclick="removeFromCart(${i})">Удалить</button>
         `;
@@ -256,11 +256,37 @@
       });
     });
 
-    // Обработчики поиска и сортировки
     search.addEventListener('input', renderProducts);
     sort.addEventListener('change', renderProducts);
 
-    // Инициализация
+    // Обработчик для кнопки "История заказов"
+    document.getElementById('toggleHistory').addEventListener('click', () => {
+      const orderHistory = document.getElementById('orderHistory');
+      if (orderHistory.style.display === 'none' || orderHistory.style.display === '') {
+        // Показать историю заказов
+        const historyList = document.getElementById('historyList');
+        historyList.innerHTML = ''; // Очистить текущий список
+
+        // Получаем историю из localStorage (предполагаем, что данные хранятся в виде массива)
+        const orderHistoryData = JSON.parse(localStorage.getItem('orderHistory')) || [];
+
+        if (orderHistoryData.length === 0) {
+          historyList.innerHTML = '<li>История заказов пуста.</li>';
+        } else {
+          orderHistoryData.forEach(order => {
+            const li = document.createElement('li');
+            li.textContent = `Имя: ${order.name}, Телефон: ${order.phone}, Адрес: ${order.address}, Итого: ${order.total} с`;
+            historyList.appendChild(li);
+          });
+        }
+
+        orderHistory.style.display = 'block'; // Показать блок с историей заказов
+      } else {
+        // Скрыть историю заказов
+        orderHistory.style.display = 'none';
+      }
+    });
+
     renderProducts();
   </script>
 </body>
