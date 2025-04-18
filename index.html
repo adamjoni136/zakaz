@@ -48,6 +48,20 @@
     .cart-summary { text-align: center; font-weight: bold; margin: 10px 0; }
     .order-form, #orderHistory { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px #ccc; margin-top: 20px; }
 
+    .delete-order {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      margin-top: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    .delete-order:hover {
+      background: #c82333;
+    }
+
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
@@ -176,9 +190,9 @@
         return;
       }
       const items = cart.map(i => `${i.title} — ${i.qty}×${i.price}c`).join('\n');
-const total = cart.reduce((sum, item) => sum + item.qty * item.price, 0);
+      const total = cart.reduce((sum, item) => sum + item.qty * item.price, 0);
 
-const msg = `Новый заказ:
+      const msg = `Новый заказ:
 Имя: ${name}
 Телефон: ${phone}
 Адрес: ${address}
@@ -187,7 +201,6 @@ ${items}
 
 Итого: ${total}c`;
 
-
       fetch('https://api.telegram.org/bot7960727448:AAF0B2mizrzj7sjHP68n-1IcjLoNc6kwVkE/sendMessage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -195,7 +208,7 @@ ${items}
       }).then(r => {
         if (r.ok) {
           const history = JSON.parse(localStorage.getItem('orderHistory') || '[]');
-          history.push({ name, phone, address, items: cart, time: new Date().toLocaleString() });
+          history.push({ name, phone, address, items: cart, time: new Date().toLocaleString(), total });
           localStorage.setItem('orderHistory', JSON.stringify(history));
           Swal.fire('Успех!', 'Ваш заказ отправлен!', 'success');
 
@@ -209,14 +222,19 @@ ${items}
       });
     };
 
+    function deleteOrder(index) {
+      let history = JSON.parse(localStorage.getItem('orderHistory') || '[]');
+      history.splice(index, 1);
+      localStorage.setItem('orderHistory', JSON.stringify(history));
+      document.getElementById('toggleHistory').click();
+      document.getElementById('toggleHistory').click();
+    }
+
     document.getElementById('toggleHistory').onclick = () => {
       const hist = document.getElementById('orderHistory');
       hist.style.display = hist.style.display === 'none' ? 'block' : 'none';
 
-      // Проверка истории
       const history = JSON.parse(localStorage.getItem('orderHistory') || '[]');
-      console.log('История заказов:', history); // Для отладки
-
       const list = document.getElementById('historyList');
       list.innerHTML = '';
 
@@ -225,9 +243,18 @@ ${items}
         return;
       }
 
-      history.forEach(o => {
+      history.forEach((o, index) => {
         const li = document.createElement('li');
-        li.innerHTML = `<strong>${o.time}</strong><br>${o.name}, ${o.phone}, ${o.address}<br>${o.items.map(i => `${i.title} × ${i.qty}`).join(', ')}`;
+        const itemsText = o.items.map(i => `${i.title} × ${i.qty}`).join(', ');
+        li.innerHTML = `
+          <strong>Заказ от: ${o.time}</strong>
+          <p>Имя: ${o.name}</p>
+          <p>Телефон: ${o.phone}</p>
+          <p>Адрес: ${o.address}</p>
+          <p>Товары: ${itemsText}</p>
+          <p><strong>Итого: ${o.total}c</strong></p>
+          <button class="delete-order" onclick="deleteOrder(${index})">Удалить</button>
+        `;
         list.appendChild(li);
       });
     };
