@@ -25,6 +25,7 @@
       color: white;
       border: none;
       cursor: pointer;
+      transition: 0.3s;
     }
     button:hover { background: #218838; }
 
@@ -65,6 +66,16 @@
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Новая анимация для добавления в корзину */
+    @keyframes addToCart {
+      0% { transform: scale(1); background-color: #28a745; }
+      50% { transform: scale(1.2); background-color: #218838; }
+      100% { transform: scale(1); background-color: #28a745; }
+    }
+    .animate-add {
+      animation: addToCart 0.5s ease;
     }
 
     @media (max-width: 600px) {
@@ -114,24 +125,23 @@
   </div>
 
   <script>
-   const products = [
-  { title: 'шотка(3361)', price: 40, image: 'шотка120.jpg' },
-  { title: 'шотка(106)', price: 40, image: 'шотка106.jpg' },
-  { title: 'шотка(3369)', price: 50, image: 'шотка авалный.jpg' },
-  { title: 'шотка(80)', price: 55, image: 'шотка80.jpg' },
-  { title: 'шотка(0058)', price: 25, image: 'шотка0058.jpg' },
-  { title: 'обув шотка', price: 20, image: 'обувшотка.jpg' },
-  { title: 'обув шотка руч', price: 20, image: 'обувшоткаруч.jpg' },
-  { title: 'шотка для одежды', price: 100, image: 'шоткаодежды.jpg' },
-  { title: 'шоткка для одежды', price: 45, image: '0019.jpg' },
-  { title: 'обув шотка', price: 35, image: 'обувшотжел.jpg' },
-  { title: 'обув шотка маль', price: 20, image: 'обувшотжелмал.jpg' },
-  { title: 'рассия терка', price: 180, image: 'рустеркакрас.jpg' },
-  { title: 'рассия терка жел', price: 170, image: 'рустеркажел.jpg' }
-];
+    const products = [
+      { title: 'шотка(3361)', price: 40, image: 'шотка120.jpg' },
+      { title: 'шотка(106)', price: 40, image: 'шотка106.jpg' },
+      { title: 'шотка(3369)', price: 50, image: 'шотка авалный.jpg' },
+      { title: 'шотка(80)', price: 55, image: 'шотка80.jpg' },
+      { title: 'шотка(0058)', price: 25, image: 'шотка0058.jpg' },
+      { title: 'обув шотка', price: 20, image: 'обувшотка.jpg' },
+      { title: 'обув шотка руч', price: 20, image: 'обувшоткаруч.jpg' },
+      { title: 'шотка для одежды', price: 100, image: 'шоткаодежды.jpg' },
+      { title: 'шоткка для одежды', price: 45, image: '0058.jpg' },
+      { title: 'обув шотка', price: 35, image: 'обувшоткажел.jpg' },
+      { title: 'обув шотка маль', price: 20, image: 'обувшоткажелмал.jpg' },
+      { title: 'рассия терка', price: 180, image: 'рустеркакрас.jpg' },
+      { title: 'рассия терка жел', price: 170, image: 'рустеркажел.jpg' }
+    ];
 
-
-    const cart = [];
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
 
     const productTable = document.getElementById('productTable');
     const search = document.getElementById('search');
@@ -167,6 +177,13 @@
       if (index !== -1) cart[index].qty += qty;
       else cart.push({ title, price, qty });
       updateCart();
+
+      // Анимация кнопки
+      btn.classList.add('animate-add');
+      setTimeout(() => btn.classList.remove('animate-add'), 500);
+
+      // Сохраняем корзину в localStorage
+      localStorage.setItem('cart', JSON.stringify(cart));
     }
 
     function updateCart() {
@@ -179,6 +196,9 @@
         cartList.appendChild(div);
       });
       totalSum.textContent = total;
+
+      // Сохраняем корзину
+      localStorage.setItem('cart', JSON.stringify(cart));
     }
 
     function removeFromCart(i) {
@@ -211,18 +231,16 @@ ${items}
 
 Итого: ${total}c`;
 
-      fetch('https://api.telegram.org/bot7960727448:AAF0B2mizrzj7sjHP68n-1IcjLoNc6kwVkE/sendMessage', {
+      fetch('https://api.telegram.org/bot<ТВОЙ_ТОКЕН>/sendMessage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: '5567924440', text: msg })
+        body: JSON.stringify({ chat_id: '<ТВОЙ_CHAT_ID>', text: msg })
       }).then(r => {
         if (r.ok) {
-          const history = JSON.parse(localStorage.getItem('orderHistory') || '[]');
-          history.push({ name, phone, address, items: cart, time: new Date().toLocaleString(), total });
-          localStorage.setItem('orderHistory', JSON.stringify(history));
           Swal.fire('Успех!', 'Ваш заказ отправлен!', 'success');
-
-          cart.length = 0; updateCart();
+          cart.length = 0;
+          updateCart();
+          localStorage.removeItem('cart');
           document.getElementById('name').value = '';
           document.getElementById('phone').value = '';
           document.getElementById('address').value = '';
@@ -272,6 +290,7 @@ ${items}
     search.oninput = renderProducts;
     sort.onchange = renderProducts;
     renderProducts();
+    updateCart();
   </script>
 </body>
 </html>
