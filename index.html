@@ -162,6 +162,15 @@
     const sort   = document.getElementById('sort');
     const cartList = document.getElementById('cartList');
     const totalSum = document.getElementById('totalSum');
+    // ДОБАВЬ в обработчике успешного заказа, перед очисткой корзины:
+const orderHistoryData = JSON.parse(localStorage.getItem('orderHistory')) || [];
+orderHistoryData.push({
+  name,
+  phone,
+  address,
+  total: cart.reduce((sum, item) => sum + item.qty * item.price, 0)
+});
+localStorage.setItem('orderHistory', JSON.stringify(orderHistoryData));
 
     function renderProducts() {
       let filtered = [...products];
@@ -180,7 +189,10 @@
         productTable.appendChild(row);
       });
     }
-
+if (!/^\d{10,}$/.test(phone)) {
+  Swal.fire('Ошибка', 'Введите корректный номер телефона.', 'warning');
+  return;
+    }
     function addToCart(title, price, image, btn) {
       const qty = Number(btn.closest('tr').querySelector('input').value);
       const index = cart.findIndex(item => item.title === title);
